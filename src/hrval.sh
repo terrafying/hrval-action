@@ -98,6 +98,9 @@ function validate {
   if [[ -z "${CHART_PATH}" ]]; then
     echo "Downloading to ${TMPDIR}"
     CHART_DIR=$(download ${HELM_RELEASE} ${TMPDIR} ${HELM_VER}| tail -n1)
+  elif [[ -d "${CHART_PATH}" ]]; then
+    echo "Found chart at ${CHART_PATH}"
+    CHART_DIR=$CHART_PATH
   else
     echo "Cloning to ${TMPDIR}"
     CHART_DIR=$(clone ${HELM_RELEASE} ${TMPDIR} ${HRVAL_HEAD_BRANCH} ${HRVAL_BASE_BRANCH} | tail -n1)
