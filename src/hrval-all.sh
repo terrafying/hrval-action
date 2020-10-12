@@ -5,7 +5,7 @@ set -o errexit
 DIR=${1}
 IGNORE_VALUES=${2-false}
 KUBE_VER=${3-master}
-HELM_VER=${4-v2}
+HELM_VER=${4-v3}
 HRVAL="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/hrval.sh"
 AWS_S3_REPO=${5-false}
 AWS_S3_REPO_NAME=${6-""}

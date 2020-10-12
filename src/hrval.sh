@@ -5,7 +5,7 @@ set -o errexit
 HELM_RELEASE=${1}
 IGNORE_VALUES=${2}
 KUBE_VER=${3-master}
-HELM_VER=${4-v2}
+HELM_VER=${4-v3}
 
 if test ! -f "${HELM_RELEASE}"; then
   echo "\"${HELM_RELEASE}\" Helm release file not found!"

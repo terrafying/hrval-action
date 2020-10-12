@@ -20,4 +20,4 @@ COPY src/hrval.sh /usr/local/bin/hrval.sh
 COPY src/hrval-all.sh /usr/local/bin/hrval
 COPY src/kustomize-validate.sh /usr/local/bin/kustomize-validate
 
-ENTRYPOINT ["hrval"]
+ENTRYPOINT ["/bin/bash", "-c"]
