@@ -1,3 +1,5 @@
+#!/bin/bash -xe
+
 if test -z "$ENV"; then
   ENV=$1
 fi
