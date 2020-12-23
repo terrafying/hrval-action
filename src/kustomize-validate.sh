@@ -4,7 +4,7 @@ fi
 
 TMP_DIR=$(mktemp -d)
 
-kustomize build manifests/$ENV/deployables/ | sed -i 's/__BRIVOENV__/'$ENV'/g' | kfilt -i kind=HelmRelease -x name=sitespeed > $TMP_DIR/tmp.yaml
+kustomize build manifests/$ENV/deployables/ | sed 's/__BRIVOENV__/'$ENV'/g' | kfilt -i kind=HelmRelease -x name=sitespeed > $TMP_DIR/tmp.yaml
 
 OUTFILE_DIR=$(mktemp -d)
 

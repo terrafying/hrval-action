@@ -16,7 +16,7 @@ inputs:
     default: 'master'
   helmVersion:
     description: 'Version of Helm to validate against'
-    default: 'v2'
+    default: 'v3'
   awsS3Repo:
     description: '(Optional) Set to true if using an AWS S3 Helm Repo'
     default: false
