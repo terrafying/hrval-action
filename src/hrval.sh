@@ -57,32 +57,37 @@ function fetch {
 
 
 function clone {
-  ORIGIN=$(git rev-parse --show-toplevel)
+  # ORIGIN=$(git rev-parse --show-toplevel)
+  # echo "ORIGIN $ORIGIN"
   CHART_GIT_REPO=$(yq r ${1} spec.chart.git)
-  RELEASE_GIT_REPO=$(git remote get-url origin)
+  echo "CHART_GIT_REPO $CHART_GIT_REPO"
+  # RELEASE_GIT_REPO=$(git remote get-url origin)
+  # echo "RELEASE_GIT_REPO $RELEASE_GIT_REPO"
 
   CHART_BASE_URL=$(basename $(echo "${CHART_GIT_REPO}" | sed -e 's/ssh:\/\///' -e 's/http:\/\///' -e 's/https:\/\///' -e 's/git@//' -e 's/:/\//') .git )
-  RELEASE_BASE_URL=$(basename $(echo "${RELEASE_GIT_REPO}" | sed -e 's/ssh:\/\///' -e 's/http:\/\///' -e 's/https:\/\///' -e 's/git@//' -e 's/:/\//') .git )
+  # RELEASE_BASE_URL=$(basename $(echo "${RELEASE_GIT_REPO}" | sed -e 's/ssh:\/\///' -e 's/http:\/\///' -e 's/https:\/\///' -e 's/git@//' -e 's/:/\//') .git )
+
+  echo "Chart Base url $CHART_BASE_URL"
 
   if [[ -n "${GITHUB_TOKEN}" ]]; then
     CHART_GIT_REPO="https://${GITHUB_TOKEN}:x-oauth-basic@${CHART_BASE_URL}"
-  elif [[ -n "${GITLAB_CI_TOKEN}" ]]; then
-    CHART_GIT_REPO="https://gitlab-ci-token:${GITLAB_CI_TOKEN}@${CHART_BASE_URL}"
+  elif [[ -n "${BITBUCKET_OAUTH}" ]] && [[ CHART_BASE_URL == bitbucket* ]]; then
+    CHART_GIT_REPO="https://${BITBUCKET_OAUTH}@${CHART_BASE_URL}"
   fi
 
   GIT_REF=$(yq r ${1} spec.chart.ref)
   CHART_PATH=$(yq r ${1} spec.chart.path)
 
   if [ ! -z ${3} ]; then
-    if [[ "${CHART_BASE_URL}" == "${RELEASE_BASE_URL}" ]] && [[ ${GIT_REF} == "${4}" ]]; then
-      # Clone from the head repository branch/ref
-      fetch ${2} ${2}/${CHART_PATH} ${RELEASE_GIT_REPO} ${3} ${ORIGIN}
-    else
+    # if [[ "${CHART_BASE_URL}" == "${RELEASE_BASE_URL}" ]] && [[ ${GIT_REF} == "${4}" ]]; then
+    #   # Clone from the head repository branch/ref
+    #   fetch ${2} ${2}/${CHART_PATH} ${RELEASE_GIT_REPO} ${3} ${ORIGIN}
+    # else
       # Regular clone
-      fetch ${2} ${2}/${CHART_PATH} ${CHART_GIT_REPO} ${GIT_REF} ${ORIGIN}
-    fi
+      fetch ${2} ${2}/${CHART_PATH} ${CHART_GIT_REPO} ${GIT_REF} ${PWD}
+    # fi
   else
-      fetch ${2} ${2}/${CHART_PATH} ${CHART_GIT_REPO} ${GIT_REF} ${ORIGIN}
+      fetch ${2} ${2}/${CHART_PATH} ${CHART_GIT_REPO} ${GIT_REF} ${PWD}
   fi
 }
 
@@ -94,6 +99,7 @@ function validate {
 
   TMPDIR=$(mktemp -d)
   CHART_PATH=$(yq r ${HELM_RELEASE} spec.chart.path)
+  CHART_REPO=$(yq r ${HELM_RELEASE} spec.chart.git)
 
   if [[ -z "${CHART_PATH}" ]]; then
     echo "Downloading to ${TMPDIR}"

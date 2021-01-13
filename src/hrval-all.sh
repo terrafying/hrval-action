@@ -17,7 +17,7 @@ fi
 
 if [[ ${AWS_S3_REPO} == true ]]; then
     helm plugin install ${AWS_S3_PLUGIN}
-    helm repo add ${AWS_S3_REPO_NAME} s3:/${AWS_S3_REPO_NAME}/charts
+    helm repo add ${AWS_S3_REPO_NAME} s3://${AWS_S3_REPO_NAME}/charts
     helm repo update
 fi
 
