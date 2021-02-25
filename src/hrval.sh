@@ -24,23 +24,36 @@ function isHelmRelease {
 }
 
 function download {
+  # spec:
+  # chart:
+  #   spec:
+  #     chart: ./charts/brivo-app
+  #     sourceRef:
+  #       kind: GitRepository
+  #       name: flux-ops
+  #       namespace: brivo-apps
+
+  NEW_CHART_REPO=$(yq r ${1} spec.chart.spec.chart)
   CHART_REPO=$(yq r ${1} spec.chart.repository)
+  if ! test -z "$NEW_CHART_REPO"; then
+    CHART_REPO=$NEW_CHART_REPO
+  fi
+
+  NEW_CHART_NAME=$(yq r ${1} spec.chart.spec.sourceRef.name)
   CHART_NAME=$(yq r ${1} spec.chart.name)
+  if ! test -z "$NEW_CHART_NAME"; then
+    CHART_NAME=$NEW_CHART_NAME
+  fi
+
   CHART_VERSION=$(yq r ${1} spec.chart.version)
   CHART_DIR=${2}/${CHART_NAME}
 
   CHART_REPO_MD5=`/bin/echo $CHART_REPO | /usr/bin/md5sum | cut -f1 -d" "`
 
-  if [[ ${HELM_VER} == "v3" ]]; then
-    helmv3 repo add ${CHART_REPO_MD5} ${CHART_REPO}
-    helmv3 repo update
-    helmv3 fetch --version ${CHART_VERSION} --untar ${CHART_REPO_MD5}/${CHART_NAME} --untardir ${2}
-  else
-    helm repo add ${CHART_REPO_MD5} ${CHART_REPO}
-    helm repo update
-    helm fetch --version ${CHART_VERSION} --untar ${CHART_REPO_MD5}/${CHART_NAME} --untardir ${2}
-  fi
-
+  helm repo add ${CHART_REPO_MD5} ${CHART_REPO}
+  helm repo update
+  helm fetch --version ${CHART_VERSION} --untar ${CHART_REPO_MD5}/${CHART_NAME} --untardir ${2}
+  
   echo ${CHART_DIR}
 }
 
@@ -98,7 +111,19 @@ function validate {
   fi
 
   TMPDIR=$(mktemp -d)
+
+  NEW_CHART_NAME=$(yq r ${HELM_RELEASE} spec.chart.spec.sourceRef.name)
+  CHART_NAME=$(yq r ${HELM_RELEASE} spec.chart.name)
+  if ! test -z "$NEW_CHART_NAME"; then
+    CHART_NAME=$NEW_CHART_NAME
+  fi
+
+  NEW_CHART_PATH=$(yq r ${HELM_RELEASE} spec.chart.spec.chart)
   CHART_PATH=$(yq r ${HELM_RELEASE} spec.chart.path)
+  if ! test -z "$NEW_CHART_PATH"; then
+    CHART_PATH=$NEW_CHART_PATH
+  fi
+
   CHART_REPO=$(yq r ${HELM_RELEASE} spec.chart.git)
 
   if [[ -z "${CHART_PATH}" ]]; then
@@ -124,23 +149,14 @@ function validate {
   fi
 
   echo "Writing Helm release to ${TMPDIR}/${HELM_RELEASE_NAME}.release.yaml"
-  if [[ ${HELM_VER} == "v3" ]]; then
-    if [[ "${CHART_PATH}" ]]; then
-      helmv3 dependency build ${CHART_DIR}
-    fi
-    helmv3 template ${HELM_RELEASE_NAME} ${CHART_DIR} \
-      --namespace ${HELM_RELEASE_NAMESPACE} \
-      --skip-crds=true \
-      -f ${TMPDIR}/${HELM_RELEASE_NAME}.values.yaml > ${TMPDIR}/${HELM_RELEASE_NAME}.release.yaml
-  else
-    if [[ "${CHART_PATH}" ]]; then
-      helm dependency build ${CHART_DIR}
-    fi
-    helm template ${CHART_DIR} \
-      --name ${HELM_RELEASE_NAME} \
-      --namespace ${HELM_RELEASE_NAMESPACE} \
-      -f ${TMPDIR}/${HELM_RELEASE_NAME}.values.yaml > ${TMPDIR}/${HELM_RELEASE_NAME}.release.yaml
+  if [[ "${CHART_PATH}" ]]; then
+    helm dependency build ${CHART_DIR}
   fi
+  helm template ${HELM_RELEASE_NAME} ${CHART_DIR} \
+    --namespace ${HELM_RELEASE_NAMESPACE} \
+    --skip-crds=true \
+    -f ${TMPDIR}/${HELM_RELEASE_NAME}.values.yaml > ${TMPDIR}/${HELM_RELEASE_NAME}.release.yaml
+
 
   echo "Validating Helm release ${HELM_RELEASE_NAME}.${HELM_RELEASE_NAMESPACE} against Kubernetes ${KUBE_VER}"
   kubeval --strict --ignore-missing-schemas --kubernetes-version ${KUBE_VER} ${TMPDIR}/${HELM_RELEASE_NAME}.release.yaml
